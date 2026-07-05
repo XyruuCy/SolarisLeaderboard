@@ -2,7 +2,7 @@
 // CONFIG
 // ============================================================
 const CONFIG = {
-  API_URL: "http://localhost:3000/api/leaderboard",
+  API_URL: "https://motivated-light-production-f0d9.up.railway.app/api/leaderboard",
   USE_MOCK_DATA: false,
   REFRESH_INTERVAL_MS: 30000,
   VISAGE_BASE_URL: "https://visage.surgeplay.com",
