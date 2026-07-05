@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kill Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght=700&family=Outfit:wght@500;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          base: '#06060b',
+          surface: '#0f0e1a',
+          surface2: '#17152b',
+          line: '#262247',
+          violet: {
+            glow: '#c0a5ff'
+          },
+          lime: '#c6f24e',
+          gold: '#f5c144',
+          silver: '#cbd5e1',
+          bronze: '#c97a3f',
+          muted: '#857fa3'
+        },
+        fontFamily: {
+          display: ['Syncopate', 'sans-serif'],
+          body: ['Outfit', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .hidden-panel { display: none !important; }
+</style>
+</head>
+<body class="bg-base text-slate-200 font-body min-h-screen antialiased select-none">
+
+  <!-- Ambient background grid -->
+  <div class="fixed inset-0 bg-grid pointer-events-none"></div>
+  <div class="fixed inset-0 bg-vignette pointer-events-none"></div>
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-30 bg-base/90 backdrop-blur-md border-b border-line px-4">
+    <div class="max-w-5xl mx-auto h-20 flex items-center justify-between gap-4">
+
+      <a href="#" class="flex items-center gap-3 shrink-0 group">
+        <img src="nav_skip.png" alt="Server Logo" class="h-10 sm:h-12 w-auto object-contain" />
+      </a>
+
+      <!-- Nav links -->
+      <div class="hidden sm:flex items-center gap-8 font-body font-700 text-sm tracking-wider uppercase">
+        <a href="#" class="text-white border-b-2 border-violet-glow pb-1 tracking-widest">Leaderboard</a>
+        <button onclick="toggleAdminView()" id="nav-admin-btn" class="text-muted hover:text-slate-200 transition-colors pb-1 uppercase tracking-wider">Admin Panel</button>
+        <a href="#" class="text-muted hover:text-slate-200 transition-colors pb-1">Rules</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="https://discord.gg" target="_blank" rel="noopener" class="w-10 h-10 flex items-center justify-center bg-surface2 border border-line hover:border-violet-glow hover:bg-violet-glow/10 text-muted hover:text-white rounded-xl transition-all hover:scale-105 duration-200 group shadow-lg" title="Join our Discord">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 127.14 96.36">
+            <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.73-10.93,68.6,68.6,0,0,1-10.64-5.12c.91-.67,1.81-1.37,2.65-2.1a75.22,75.22,0,0,0,72.86,0c.84.73,1.74,1.43,2.65,2.1a68.86,68.86,0,0,1-10.65,5.16,74.83,74.83,0,0,0,6.73,10.93,105.54,105.54,0,0,0,31.1-18.78C129.6,48.54,123.6,25.79,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+          </svg>
+        </a>
+
+        <div class="flex items-center gap-2 bg-surface2/60 border border-line px-3 py-1.5 rounded-full">
+          <span class="relative w-2 h-2 shrink-0">
+            <span class="absolute inset-0 rounded-full bg-lime animate-ping-slow opacity-75"></span>
+            <span class="absolute inset-0 rounded-full bg-lime"></span>
+          </span>
+          <span id="live-count" class="text-[10px] font-mono uppercase tracking-widest text-muted">syncing…</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="relative max-w-5xl mx-auto px-4 sm:px-6 py-10">
+
+    <header class="mb-8 text-center sm:text-left">
+      <h1 class="font-display font-900 text-3xl sm:text-4xl tracking-tight text-white mb-2 uppercase">
+        PRIME<span class="text-violet-glow">/</span>TRACKER
+      </h1>
+      <p class="text-base text-muted max-w-xl font-500">Top fraggers on the server, ranked by confirmed kills. Right-click a row to copy identity data.</p>
+    </header>
+
+    <!-- INFORMATION ROADMAP GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div class="bg-surface/60 border-2 border-line rounded-2xl p-5 flex items-start gap-4 backdrop-blur-sm">
+        <div class="w-12 h-12 rounded-xl bg-violet-glow/10 flex items-center justify-center text-violet-glow font-display text-xl shrink-0 border border-violet-glow/20">∑</div>
+        <div>
+          <h4 class="text-white font-700 text-sm tracking-wide uppercase mb-1">How Points Work</h4>
+          <p class="text-xs text-muted leading-relaxed font-500">Every confirmed server frag grants you exactly <span class="text-lime font-700">15 Points</span>. Your overall ranking position adjusts dynamically using your accumulated total score.</p>
+          <div class="mt-2 text-[11px] font-mono text-violet-glow/90 bg-base/50 px-2.5 py-1 rounded-md inline-block border border-line/50">
+            FORMULA: Total Kills × 15 = Score Points
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface/60 border-2 border-line rounded-2xl p-5 flex items-start gap-4 backdrop-blur-sm">
+        <div class="w-12 h-12 rounded-xl bg-lime/10 flex items-center justify-center text-lime font-display text-xl shrink-0 border border-lime/20">⚔</div>
+        <div>
+          <h4 class="text-white font-700 text-sm tracking-wide uppercase mb-1">Tier Titles Roadmap</h4>
+          <p class="text-xs text-muted leading-relaxed font-500">Climb your way up the food chain. Reaching specific milestones instantly unlocks server tags:</p>
+          <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] font-mono uppercase">
+            <div><span class="text-red-500 font-900">Grandmaster</span> <span class="text-muted/60">60k+</span></div>
+            <div><span class="text-orange-400 font-900">Gladiator</span> <span class="text-muted/60">50k+</span></div>
+            <div><span class="text-violet-glow font-700">Warlord</span> <span class="text-muted/60">30k+</span></div>
+            <div><span class="text-blue-400 font-700">Veteran</span> <span class="text-muted/60">15k+</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search bar area -->
+    <div class="flex flex-col sm:flex-row gap-4 mb-8">
+      <div class="relative flex-1">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="SEARCH FOR A PLAYER FRAGGER…"
+          class="w-full bg-surface border border-line focus:border-violet-glow rounded-xl pl-12 pr-4 py-4 text-sm font-700 tracking-wide text-slate-100 placeholder:text-muted/60 outline-none transition-all focus:ring-4 focus:ring-violet-glow/10"
+          autocomplete="off"
+        />
+      </div>
+      <div class="flex items-center gap-2 text-xs font-mono text-muted bg-surface border border-line rounded-xl px-5 py-4 whitespace-nowrap">
+        <span id="player-count" class="text-white font-700">0</span> TARGETS TRACKED
+      </div>
+    </div>
+
+    <div id="search-result" class="hidden mb-6 rounded-xl border border-violet-glow/30 bg-violet-glow/5 px-5 py-4 text-sm font-500"></div>
+
+    <!-- Leaderboard View Block -->
+    <div class="bg-transparent overflow-hidden mb-12">
+      <div class="grid grid-cols-[70px_1fr_100px_100px] sm:grid-cols-[90px_1fr_150px_130px_100px] items-center px-5 sm:px-7 py-2.5 text-[11px] font-mono uppercase tracking-widest text-muted/80 mb-2">
+        <span>Rank</span>
+        <span>Player Info</span>
+        <span class="text-right sm:text-left">Points</span>
+        <span class="text-right sm:text-left">Kills ↓</span>
+        <span class="text-right hidden sm:block">Status</span>
+      </div>
+
+      <div id="leaderboard-body" class="space-y-2.5"></div>
+
+      <div id="empty-state" class="hidden rounded-2xl border-2 border-line bg-surface px-6 py-16 text-center text-base text-muted font-700 uppercase tracking-wider">
+        No active fraggers match your search.
+      </div>
+    </div>
+
+    <!-- ==================== BUILT-IN SECURE ADMIN SECTION ==================== -->
+    <div id="admin-dashboard-panel" class="hidden-panel pt-10 border-t-2 border-dashed border-line transition-all duration-300">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-900 text-white uppercase tracking-tight">OVERRIDE<span class="text-violet-glow">/</span>CONTROL-ROOM</h2>
+          <p class="text-xs text-slate-400 font-mono uppercase mt-1">Manual Database injection, modification & profile deletion deck</p>
+        </div>
+        <button onclick="logoutAdmin()" class="px-4 py-2 bg-red-500/10 border border-red-500/30 hover:border-red-500 text-red-400 text-xs font-700 uppercase tracking-widest rounded-xl transition-all">Lock Console</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Manual Form Block -->
+        <div class="md:col-span-1 bg-surface border border-line rounded-2xl p-5 shadow-xl h-fit transition-colors duration-300">
+          <form id="player-form" class="space-y-4 text-xs font-mono">
+            <div>
+              <label class="block text-slate-400 uppercase tracking-wider mb-1.5">Minecraft Username *</label>
+              <input type="text" id="form-username" required placeholder="e.g. Juszzz" class="w-full bg-base border border-line focus:border-violet-glow rounded-xl px-4 py-3 text-white outline-none font-sans font-700 text-sm" />
+            </div>
+            <div>
+              <label class="block text-slate-400 uppercase tracking-wider mb-1.5">Player UUID (Optional)</label>
+              <input type="text" id="form-uuid" placeholder="Auto-generated if blank" class="w-full bg-base border border-line focus:border-violet-glow rounded-xl px-4 py-3 text-white outline-none text-[11px]" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 uppercase tracking-wider mb-1.5">Kills</label>
+                <input type="number" id="form-kills" min="0" value="0" class="w-full bg-base border border-line focus:border-violet-glow rounded-xl px-4 py-3 text-lime outline-none font-700 text-sm" />
+              </div>
+              <div>
+                <label class="block text-slate-400 uppercase tracking-wider mb-1.5">Deaths</label>
+                <input type="number" id="form-deaths" min="0" value="0" class="w-full bg-base border border-line focus:border-violet-glow rounded-xl px-4 py-3 text-red-400 outline-none font-700 text-sm" />
+              </div>
+            </div>
+            <div class="flex items-center gap-3 py-1">
+              <input type="checkbox" id="form-online" class="w-4 h-4 rounded border-line bg-base text-violet-glow cursor-pointer" />
+              <label for="form-online" class="text-slate-300 uppercase tracking-wider cursor-pointer">Set Online</label>
+            </div>
+            <button type="submit" class="w-full py-3 bg-violet-glow text-base font-900 tracking-widest rounded-xl hover:opacity-90 text-base font-body uppercase text-base">Save Data Block</button>
+          </form>
+        </div>
+
+        <!-- Real-time Database state grid view -->
+        <div class="md:col-span-2 bg-surface border border-line rounded-2xl p-5 shadow-xl">
+          <div class="overflow-hidden rounded-xl border border-line bg-base/50">
+            <div class="grid grid-cols-[1fr_70px_70px_110px] p-3 border-b border-line text-[10px] font-mono uppercase tracking-wider text-slate-400 bg-surface">
+              <span>Identity Logs</span>
+              <span class="text-center">Kills</span>
+              <span class="text-center">Deaths</span>
+              <span class="text-right">Actions</span>
+            </div>
+            <div id="admin-list" class="divide-y divide-line/40 max-h-[380px] overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Footer -->
+    <footer class="mt-12 text-center text-xs text-muted font-mono tracking-widest uppercase">
+      Renders via <a href="https://visage.surgeplay.com" target="_blank" rel="noopener" class="text-violet-glow hover:text-white underline underline-offset-4">Visage Engine</a> &middot; Data Synced Live
+    </footer>
+
+  </div>
+
+  <!-- ==================== SECURITY SHIELD MODAL WINDOW (LOGIN POPUP) ==================== -->
+  <div id="login-modal" class="hidden-panel fixed inset-0 z-50 flex items-center justify-center p-4 bg-base/80 backdrop-blur-sm">
+    <div class="w-full max-w-md bg-surface border border-line rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="mb-5 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xl mb-3 animate-pulse">🔒</div>
+        <h2 class="text-xl font-900 text-white uppercase tracking-tight">ADMIN_GATEWAY<span class="text-violet-glow">/</span>AUTH</h2>
+        <p class="text-[11px] font-mono text-slate-400 uppercase mt-1">Authentication token verification required</p>
+      </div>
+      
+      <form id="login-form" class="space-y-4 font-mono text-xs">
+        <div>
+          <input type="password" id="login-password" required placeholder="ENTER ADMIN KEY" class="w-full bg-base border border-line focus:border-violet-glow rounded-xl px-4 py-3.5 text-white text-center text-sm outline-none tracking-widest" />
+        </div>
+        <div id="login-error" class="text-red-400 text-center font-bold hidden-panel uppercase text-[10px] tracking-wider">⚠️ Refused: Invalid Access Key</div>
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" onclick="closeLoginModal()" class="py-3 bg-surface2 border border-line hover:border-slate-500 rounded-xl font-sans text-xs uppercase tracking-wider transition-colors">Abort</button>
+          <button type="submit" class="py-3 bg-red-500 text-white font-900 rounded-xl hover:bg-red-600 font-sans text-xs uppercase tracking-wider transition-colors">Decrypt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Context Menu Box Right Click -->
+  <div id="custom-cm" class="hidden fixed z-50 w-52 bg-surface2 border-2 border-line rounded-xl shadow-2xl p-1.5 font-body text-xs font-700 uppercase tracking-wider">
+    <button onclick="copyData('name')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-violet-glow hover:text-base transition-colors flex items-center justify-between">
+      <span>Copy Name</span>
+      <span class="text-[10px] opacity-60">TXT</span>
+    </button>
+    <button onclick="copyData('uuid')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-violet-glow hover:text-base transition-colors flex items-center justify-between border-t border-line/50 mt-1">
+      <span>Copy UUID</span>
+      <span class="text-[10px] opacity-60">ID</span>
+    </button>
+  </div>
+
+  <!-- Pangalawang Script load para sa application functions -->
+  <script src="app.js"></script>
+
+  <!-- ==================== ADMIN DYNAMICS INTERACTION MANAGEMENT INTERCEPTOR ==================== -->
+  <script>
+    const AUTH_API = "http://localhost:3000/api";
+    const loginModal = document.getElementById("login-modal");
+    const loginForm = document.getElementById("login-form");
+    const loginError = document.getElementById("login-error");
+    const adminPanel = document.getElementById("admin-dashboard-panel");
+    const adminNavBtn = document.getElementById("nav-admin-btn");
+    const adminForm = document.getElementById("player-form");
+    const adminList = document.getElementById("admin-list");
+
+    function checkActiveSession() {
+      const token = localStorage.getItem("admin_session_token");
+      if (token) {
+        adminPanel.classList.remove("hidden-panel");
+        adminNavBtn.textContent = "Close Panel";
+        adminNavBtn.className = "text-violet-glow hover:text-white border-b-2 border-violet-glow pb-1 uppercase tracking-wider";
+        loadAdminInventory();
+      } else {
+        adminPanel.classList.add("hidden-panel");
+        adminNavBtn.textContent = "Admin Panel";
+        adminNavBtn.className = "text-muted hover:text-slate-200 transition-colors pb-1 uppercase tracking-wider";
+      }
+    }
+
+    function toggleAdminView() {
+      const token = localStorage.getItem("admin_session_token");
+      if (token) {
+        if (adminPanel.classList.contains("hidden-panel")) {
+          adminPanel.classList.remove("hidden-panel");
+          adminNavBtn.textContent = "Close Panel";
+          loadAdminInventory();
+        } else {
+          adminPanel.classList.add("hidden-panel");
+          adminNavBtn.textContent = "Admin Panel";
+        }
+      } else {
+        loginModal.classList.remove("hidden-panel");
+        document.getElementById("login-password").focus();
+      }
+    }
+
+    function closeLoginModal() {
+      loginModal.classList.add("hidden-panel");
+      loginError.classList.add("hidden-panel");
+      loginForm.reset();
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.classList.add("hidden-panel");
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const res = await fetch(`${AUTH_API}/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem("admin_session_token", data.token);
+          closeLoginModal();
+          checkActiveSession();
+          setTimeout(() => adminPanel.scrollIntoView({ behavior: 'smooth' }), 200);
+        } else {
+          loginError.classList.remove("hidden-panel");
+        }
+      } catch (err) {
+        alert("Authorization validation link broken.");
+      }
+    });
+
+    window.logoutAdmin = function() {
+      localStorage.removeItem("admin_session_token");
+      checkActiveSession();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    let currentCachedPlayers = [];
+
+    async function loadAdminInventory() {
+      try {
+        const res = await fetch(`${AUTH_API}/leaderboard`);
+        currentCachedPlayers = await res.json();
+        adminList.innerHTML = currentCachedPlayers.length ? "" : '<div class="p-4 text-center text-xs text-slate-500 uppercase tracking-widest font-mono">No log configurations found.</div>';
+        
+        currentCachedPlayers.forEach((p, index) => {
+          const row = document.createElement("div");
+          row.className = "grid grid-cols-[1fr_70px_70px_110px] items-center p-3 text-xs font-mono";
+          row.innerHTML = `
+            <div class="flex flex-col min-w-0 pr-2">
+              <span class="font-sans font-700 text-sm text-white truncate">${p.username}</span>
+              <span class="text-[9px] text-slate-500 truncate mt-0.5">${p.uuid || 'NO UUID LOADED'}</span>
+            </div>
+            <span class="text-center text-lime font-700">${p.kills}</span>
+            <span class="text-center text-slate-400">${p.deaths}</span>
+            <div class="text-right flex items-center justify-end gap-1.5">
+              <button type="button" onclick="editAdminPlayer(${index})" class="text-violet-glow hover:text-white font-700 text-[10px] uppercase tracking-wider border border-violet-glow/20 hover:border-violet-glow bg-violet-glow/5 px-2 py-1 rounded-md transition-all">EDIT</button>
+              <button type="button" onclick="deleteAdminPlayer('${p.username}')" class="text-red-400 hover:text-red-300 font-700 text-[10px] uppercase tracking-wider border border-red-500/20 hover:border-red-500 bg-red-500/5 px-2 py-1 rounded-md transition-all">DEL</button>
+            </div>
+          `;
+          adminList.appendChild(row);
+        });
+      } catch (err) { console.error(err); }
+    }
+
+    window.editAdminPlayer = function(index) {
+      const player = currentCachedPlayers[index];
+      if (!player) return;
+
+      document.getElementById("form-username").value = player.username;
+      document.getElementById("form-uuid").value = player.uuid || "";
+      document.getElementById("form-kills").value = player.kills;
+      document.getElementById("form-deaths").value = player.deaths || 0;
+      document.getElementById("form-online").checked = !!player.online;
+
+      adminForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      const formBox = adminForm.parentElement;
+      formBox.classList.add("border-lime");
+      setTimeout(() => formBox.classList.remove("border-lime"), 500);
+    };
+
+    adminForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem("admin_session_token");
+      const payload = {
+        username: document.getElementById("form-username").value,
+        uuid: document.getElementById("form-uuid").value,
+        kills: parseInt(document.getElementById("form-kills").value) || 0,
+        deaths: parseInt(document.getElementById("form-deaths").value) || 0,
+        online: document.getElementById("form-online").checked
+      };
+
+      try {
+        const res = await fetch(`${AUTH_API}/admin/players`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": token
+          },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          adminForm.reset();
+          loadAdminInventory();
+          if (typeof init === "function") { init(); }
+        } else if (res.status === 403) { logoutAdmin(); }
+      } catch (err) { alert("Deployment connection system drop."); }
+    });
+
+    window.deleteAdminPlayer = async function(username) {
+      if (!confirm(`Completely wipe out all data tracks for ${username}?`)) return;
+      const token = localStorage.getItem("admin_session_token");
+      try {
+        const res = await fetch(`${AUTH_API}/admin/players`, {
+          method: "DELETE",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": token
+          },
+          body: JSON.stringify({ username })
+        });
+        if (res.ok) { 
+          loadAdminInventory(); 
+          if (typeof init === "function") { init(); }
+        } else if (res.status === 403) { logoutAdmin(); }
+      } catch (err) { alert("Destruction array signal dropped."); }
+    };
+
+    checkActiveSession();
+  </script>
+</body>
+</html>
